@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>羽球教練儀表板</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            padding-top: 3rem;
+        }
+        .container {
+            background: #ffffff;
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px; /* 加寬一點以容納圖表 */
+        }
+        h1 {
+            color: #003366;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* 篩選器佈局 */
+        .filters-container {
+            display: flex;
+            flex-wrap: wrap; /* 換行 */
+            justify-content: space-between;
+            gap: 1.5rem; /* 選單之間的間距 */
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+            flex: 1; /* 讓元素平分寬度 */
+            min-width: 250px; /* 最小寬度 */
+        }
+        
+        /* 讓搜尋欄佔滿整行 */
+        .form-group.full-width {
+            flex-basis: 100%;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 0.8rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            background-color: #007bff; /* 藍色 */
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        /* 圖表區塊 */
+        h2 {
+            margin-top: 2rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        .chart-placeholder {
+            margin-top: 1.5rem;
+            padding: 3rem 2rem;
+            background-color: #fafafa;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            text-align: center;
+            color: #555;
+            min-height: 200px; /* 給圖表一個預設高度 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            white-space: pre-wrap; /* 讓 \n 換行符號生效 */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>羽球教練儀表板</h1>
+
+        <form action="/" method="POST">
+            
+            <div class="filters-container">
+                <div class="form-group full-width">
+                    <label for="search_input">搜尋學生 (可選)</label>
+                    <input type="text" id="search_input" name="search_query" placeholder="請輸入學生姓名..." value="{{ current_search or '' }}">
+                </div>
+            </div>
+
+            <div class="filters-container">
+                <div class="form-group">
+                    <label for="session_select">場次</label>
+                    <select id="session_select" name="session_id" required>
+                        <option value="" disabled {% if not current_session %}selected{% endif %}>-- 請選擇場次 --</option>
+                        
+                        {% for s in sessions %}
+                            <option value="{{ s.id }}" {% if s.id == current_session %}selected{% endif %}>
+                                {{ s.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="attribute_select">屬性</label>
+                    <select id="attribute_select" name="attribute_name" required>
+                        <option value="" disabled {% if not current_attribute %}selected{% endif %}>-- 請選擇屬性 --</option>
+                        
+                        {% for attr in attributes %}
+                            <option value="{{ attr }}" {% if attr == current_attribute %}selected{% endif %}>
+                                {{ attr }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group full-width">
+                <button type="submit">生成圖表</button>
+            </div>
+        </form>
+
+        {% if chart_data %}
+            <h2>分析結果</h2>
+            <div class="chart-placeholder">
+                <p><strong>{{ chart_data }}</strong></p>
+                
+                </div>
+        {% endif %}
+
+    </div>
+
+</body>
+</html>
