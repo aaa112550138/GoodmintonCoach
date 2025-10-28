@@ -3,106 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>羽球教練儀表板</title>
+    <title>選手報告</title>
+    <!-- 假設你的 CSS 檔案在 static/style.css -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+    <!-- 為了讓範例好看，加一點基本樣式 (你可以用你自己的 CSS) -->
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            padding-top: 3rem;
-        }
-        .container {
-            background: #ffffff;
-            padding: 2rem 3rem;
-            border-radius: 12px;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 800px; /* 加寬一點以容納圖表 */
-        }
-        h1 {
-            color: #003366;
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-        
-        /* 篩選器佈局 */
-        .filters-container {
-            display: flex;
-            flex-wrap: wrap; /* 換行 */
-            justify-content: space-between;
-            gap: 1.5rem; /* 選單之間的間距 */
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-            flex: 1; /* 讓元素平分寬度 */
-            min-width: 250px; /* 最小寬度 */
-        }
-        
-        /* 讓搜尋欄佔滿整行 */
-        .form-group.full-width {
-            flex-basis: 100%;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-            color: #333;
-        }
+        body { font-family: system-ui, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 20px auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 32px; }
+        h1, h2 { text-align: center; color: #1d3557; }
+        .filters-container { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; }
+        .form-group { flex: 1; display: flex; flex-direction: column; min-width: 200px; }
+        .form-group.full-width { flex-basis: 100%; }
+        label { margin-bottom: 8px; font-weight: 600; color: #495057; }
         input[type="text"], select {
             width: 100%;
-            padding: 0.75rem;
-            font-size: 1rem;
-            border: 1px solid #ddd;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
             border-radius: 8px;
             box-sizing: border-box;
         }
         button {
             width: 100%;
-            padding: 0.8rem;
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #fff;
-            background-color: #007bff; /* 藍色 */
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background-color 0.2s;
+            background-color: #007bff; color: white; font-size: 16px; font-weight: 600;
+            padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s;
         }
-        button:hover {
-            background-color: #0056b3;
-        }
+        button:hover:not(:disabled) { background-color: #0056b3; }
+        button:disabled { background-color: #a0cfff; cursor: not-allowed; }
         
-        /* 圖表區塊 */
-        h2 {
-            margin-top: 2rem;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 0.5rem;
+        /* -- 這是新的結果區塊 -- */
+        #analysis-result-area {
+            margin-top: 24px; padding: 20px; border: 2px dashed #ced4da;
+            border-radius: 8px; min-height: 100px; background-color: #f8f9fa;
         }
-        .chart-placeholder {
-            margin-top: 1.5rem;
-            padding: 3rem 2rem;
-            background-color: #fafafa;
-            border: 2px dashed #ccc;
-            border-radius: 8px;
-            text-align: center;
-            color: #555;
-            min-height: 200px; /* 給圖表一個預設高度 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            white-space: pre-wrap; /* 讓 \n 換行符號生效 */
+        #analysis-result-area.loading {
+            display: grid; place-items: center; color: #495057; font-size: 1.1em;
+        }
+        #analysis-result-area img {
+            max-width: 100%; height: auto; margin-top: 16px; border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        .error-message {
+            color: #d90429; font-weight: bold; white-space: pre-wrap;
+        }
+        /* 用 pre 來顯示 AI 回覆的 markdown 格式 */
+        #analysis-result-area pre {
+            white-space: pre-wrap; word-wrap: break-word; background-color: #e9ecef;
+            padding: 15px; border-radius: 5px; font-family: Consolas, "Courier New", monospace;
+            color: #212529;
+        }
+
+        /* -- 你原有的報告連結樣式 -- */
+        .match-link-group { margin-top: 10px; }
+        .btn-disabled {
+            background-color: #6c757d; color: white; padding: 10px 15px;
+            border-radius: 5px; text-decoration: none; opacity: 0.65; cursor: not-allowed;
+        }
+        #report-btn {
+            background-color: #28a745; color: white; padding: 10px 15px;
+            border-radius: 5px; text-decoration: none; display: inline-block;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>羽球教練儀表板</h1>
+        <h1>🏸 羽球教練儀表板</h1>
 
-        <form action="/" method="POST">
+        <!-- 
+          【關鍵修改 1】
+          - 移除 action 和 method
+          - 加上 id="analysis-form"
+        -->
+        <form id="analysis-form">
             
             <div class="filters-container">
                 <div class="form-group full-width">
@@ -114,9 +87,8 @@
             <div class="filters-container">
                 <div class="form-group">
                     <label for="session_select">場次</label>
-                    <select id="session_select" name="session_id" required>
-                        <option value="" disabled {% if not current_session %}selected{% endif %}>-- 請選擇場次 --</option>
-                        
+                    <select id="session_select" name="session_id">
+                        <option value="" {% if not current_session %}selected{% endif %} disabled>-- 請選擇場次 --</option>
                         {% for s in sessions %}
                             <option value="{{ s.id }}" {% if s.id == current_session %}selected{% endif %}>
                                 {{ s.name }}
@@ -127,9 +99,8 @@
 
                 <div class="form-group">
                     <label for="attribute_select">屬性</label>
-                    <select id="attribute_select" name="attribute_name" required>
-                        <option value="" disabled {% if not current_attribute %}selected{% endif %}>-- 請選擇屬性 --</option>
-                        
+                    <select id="attribute_select" name="attribute_name">
+                        <option value="" {% if not current_attribute %}selected{% endif %} disabled>-- 請選擇屬性 --</option>
                         {% for attr in attributes %}
                             <option value="{{ attr }}" {% if attr == current_attribute %}selected{% endif %}>
                                 {{ attr }}
@@ -138,21 +109,56 @@
                     </select>
                 </div>
             </div>
-            
+
             <div class="form-group full-width">
-                <button type="submit">生成圖表</button>
+                <!-- 【關鍵修改 2】加上 id="generate-button" -->
+                <button type="submit" id="generate-button">生成圖表</button>
             </div>
         </form>
 
-        {% if chart_data %}
-            <h2>分析結果</h2>
-            <div class="chart-placeholder">
-                <p><strong>{{ chart_data }}</strong></p>
+        <!-- 
+          【關鍵修改 3】
+          - 移除 {% if chart_data %} ... {% endif %}
+          - 換成這個固定的 <div>，讓 JavaScript 填入內容
+        -->
+        <h2>📊 分析結果</h2>
+        <div id="analysis-result-area">
+            <p>請選擇條件並點擊「生成圖表」以開始分析。</p>
+        </div>
+
+
+        <!-- 🔗 比賽報告連結（獨立功能 - 保持不變）-->
+        <h2>📄 比賽報告</h2>
+        <div class="filters-container">
+            <div class="form-group full-width">
+                <label for="match_link_select">選擇比賽</label>
+                <select id="match_link_select" onchange="updateReportLinks()">
+                    <option value="" selected disabled>-- 請選擇比賽連結 --</option>
+                    {% for link in links %}
+                        <option value="{{ url_for(link.route, report_id=link.param) }}">
+                            {{ link.name }}
+                        </option>
+                    {% endfor %}
+                </select>
                 
-                </div>
-        {% endif %}
+            </div>
+            <div class="form-group">
+                <label>前往報告</label>
+                <a id="report-btn" href="#" class="btn-disabled" target="_blank">請先選擇比賽</a>
+            </div>
+            <div class="form-group full-width match-link-group">
+                <label>預覽選擇的報告</label>
+                <a id="actual-link" href="#" target="_blank">請先選擇比賽</a>
+            </div>
+        </div>
 
     </div>
 
+    <!-- 
+      【關鍵修改 4】
+      - 你的 HTML 已經有這一行了，保持不變！
+      - 我們將在下面建立這個檔案。
+    -->
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 </body>
 </html>
