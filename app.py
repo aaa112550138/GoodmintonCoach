@@ -35,26 +35,35 @@ REPORT_PICS_DIR = os.path.join(app.root_path, 'report_pics')
 def get_sessions_from_db():
     """模擬抓取場次"""
     return [
-        {"id": "S001", "name": "週一 18:00 - 20:00 (A 場地)"},
-        {"id": "S002", "name": "週三 19:00 - 21:00 (B 場地)"},
+        {"id": "S001", "name": "場次1"},
     ]
 
 def get_attributes_list():
     """定義可以分析的屬性"""
-    return ["ALL (總覽)", "勝率", "失誤率", "出席率", "得分率", "球種"]
+    return ["ALL (總覽)", "勝率", "失誤率", "出席率", "球落點分布", "球種"]
 
 def get_report_links():
     """模擬 HTML 中的 links"""
     return [
         {"route": "report_view", "param": "R001", "name": "R001: 趙 vs 陶 (chao_vs_tao)"},
-        {"route": "report_view", "param": "R002", "name": "R002: 李 vs 林 (lee_vs_lin)"},
     ]
 
 def get_main_text(report_id):
     """ 模擬你要放的主要文字 (根據 ID) """
     return f"""
     這裡是報告 {report_id} 的主要文字區塊。
-    這份報告分析了 {report_id} 的比賽數據...
+    周天成的主要得分手段為「落地致勝」，主要失分原因為「出界」、「掛網」和「未過網」。
+
+    關鍵發現：
+
+    得分手段集中： 周天成的得分手段主要依賴於「落地致勝」（80次），遠高於其他得分方式。這顯示其進攻具備一定威脅性，能直接得分。
+    數據來源：player_win_reasons
+    非受迫性失誤為主： 周天成的失分主要來自於「出界」（74次）、「掛網」（60次）和「未過網」（24次），這些都屬於非受迫性失誤。這暗示周天成在比賽中可能存在穩定性問題，需要減少自身失誤。
+    數據來源：player_lose_reasons
+    
+    總結：
+
+    周天成具備強勁的進攻能力，但需要透過減少非受迫性失誤來提升比賽穩定性。
     """
 
 # ▼▼▼ 修改 3: 調整 get_chart_card_data ▼▼▼
@@ -91,6 +100,26 @@ def get_chart_card_data(report_id):
         },
         {
             "image_url": f"/report-images/{image_folder_name}/opp_lose_reasons.png",
+            "title": f"{image_folder_name} - 得分分析圖",
+            "description": "這是從 report_pics 動態載入的得分分析圖。"
+        },
+        {
+            "image_url": f"/report-images/{image_folder_name}/running.png",
+            "title": f"{image_folder_name} - 得分分析圖",
+            "description": "這是從 report_pics 動態載入的得分分析圖。"
+        },
+        {
+            "image_url": f"/report-images/{image_folder_name}/score_reason.png",
+            "title": f"{image_folder_name} - 得分分析圖",
+            "description": "這是從 report_pics 動態載入的得分分析圖。"
+        },
+        {
+            "image_url": f"/report-images/{image_folder_name}/smash.png",
+            "title": f"{image_folder_name} - 得分分析圖",
+            "description": "這是從 report_pics 動態載入的得分分析圖。"
+        },
+        {
+            "image_url": f"/report-images/{image_folder_name}/time_error.png",
             "title": f"{image_folder_name} - 得分分析圖",
             "description": "這是從 report_pics 動態載入的得分分析圖。"
         },
