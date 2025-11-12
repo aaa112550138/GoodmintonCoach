@@ -2,11 +2,122 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>比賽報告</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>羽球分析報告</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px; /* 讓頁面寬一點以容納多張卡片 */
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #003366;
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 1rem;
+        }
+        
+        /* 1. 你的主要文字區塊 */
+        .introduction-text {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: #333;
+            background-color: #f9f9f9;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2.5rem;
+            white-space: pre-wrap; /* 讓 Python 傳來的換行符號生效 */
+        }
+        
+        h2 {
+            color: #1a237e;
+            margin-bottom: 1.5rem;
+        }
+
+        /* 2. 圖片/圖表 的網格容器 (Grid Container) */
+        .chart-grid {
+            display: grid;
+            /* 這是 CSS Grid 的魔法:
+              - repeat(auto-fit, ...): 自動判斷一行能塞幾張卡片
+              - minmax(300px, 1fr): 每張卡片最少 300px 寬，
+                                     如果空間夠，就平均分配 (1fr)
+            */
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem; /* 卡片之間的間距 */
+        }
+
+        /* 3. 單張卡片 (Card) 的樣式 */
+        .chart-card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            overflow: hidden; /* 讓圖片的圓角生效 */
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .chart-card:hover {
+            transform: translateY(-5px); /* 滑鼠移上去時輕微浮起 */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 卡片裡的圖片 */
+        .chart-card img {
+            width: 100%; /* 圖片寬度 100% 填滿卡片 */
+            height: auto; /* 圖片高度自動 (保持比例) */
+            display: block;
+            background-color: #f0f0f0; /* 圖片載入前的底色 */
+        }
+        
+        /* 卡片裡的文字區 (你的一兩行文字) */
+        .card-content {
+            padding: 1rem 1.25rem;
+        }
+        .chart-card h3 {
+            font-size: 1.2rem;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+        }
+        .chart-card p {
+            font-size: 0.95rem;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 0;
+        }
+    </style>
 </head>
 <body>
-    <h1>這裡是比賽報告頁面</h1>
-    <p>比賽報告 ID: {{ report_id }}</p>
-    <a href="/">回到首頁</a>
-</body>
+
+    <div class="container">
+        <h1>羽球分析報告</h1>
+
+        <div class="introduction-text">
+            {{ main_introduction_text }}
+        </div>
+
+        <h2>詳細圖表分析</h2>
+        
+        <div class="chart-grid">
+
+            {% for item in chart_data_list %}
+            <div class="chart-card">
+                <img src="{{ item.image_url }}" alt="{{ item.title }}">
+                <div class="card-content">
+                    <h3>{{ item.title }}</h3>
+                    <p>{{ item.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+            
+        </div> </div> </body>
 </html>
