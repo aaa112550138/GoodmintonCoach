@@ -1,6 +1,8 @@
-from flask import Flask, render_template, request, jsonify, url_for
+# ▼▼▼ 修改 1: 匯入 os 和 send_from_directory ▼▼▼
+from flask import Flask, render_template, request, jsonify, url_for, send_from_directory
 import io
 import base64 
+import os # <-- 需要 os 模組來組合路徑
 
 try:
     import llm_core
@@ -13,93 +15,121 @@ except ImportError:
 
 app = Flask(__name__)
 
+# ▼▼▼ 修改 2: (Part 1) 定義 report_pics 資料夾的絕對路徑 ▼▼▼
+# app.root_path 指的是 app.py 所在的資料夾
+REPORT_PICS_DIR = os.path.join(app.root_path, 'report_pics')
+# 
+# 你的資料夾結構現在應該是:
+# badminton_app/
+# ├── app.py              <-- (app.root_path)
+# ├── report_pics/        <-- (REPORT_PICS_DIR)
+# │   └── chao_vs_tao/
+# │       ├── win_rate.png
+# │       └── error_rate.png
+# ├── static/
+# └── templates/
+#
+
+
 # --- 模擬資料庫 (保持不變) ---
 def get_sessions_from_db():
     """模擬抓取場次"""
     return [
-        {"id": "S001", "name": "場次1"}
+        {"id": "S001", "name": "週一 18:00 - 20:00 (A 場地)"},
+        {"id": "S002", "name": "週三 19:00 - 21:00 (B 場地)"},
     ]
 
 def get_attributes_list():
     """定義可以分析的屬性"""
-    return ["ALL (總覽)", "勝率", "失誤率", "出席率", "球落點分布", "球種"]
+    return ["ALL (總覽)", "勝率", "失誤率", "出席率", "得分率", "球種"]
 
-# --- 模擬比賽報告連結 (來自你的 HTML) ---
 def get_report_links():
-    """
-    模擬 HTML 中的 links。
-    "route" 欄位必須對應到 @app.route 函式的名稱 (report_view)
-    "param" 欄位會被傳遞給 <report_id>
-    """
+    """模擬 HTML 中的 links"""
     return [
-        {"route": "report_view", "param": "R001", "name": "R001: 場次1"}
+        {"route": "report_view", "param": "R001", "name": "R001: 趙 vs 陶 (chao_vs_tao)"},
+        {"route": "report_view", "param": "R002", "name": "R002: 李 vs 林 (lee_vs_lin)"},
     ]
 
-# --- (從上個範例) 模擬報告資料 (已修改為動態) ---
 def get_main_text(report_id):
     """ 模擬你要放的主要文字 (根據 ID) """
-    # 未來你可以用 report_id 去資料庫查詢
     return f"""
     這裡是報告 {report_id} 的主要文字區塊。
-    這份報告總結了「週三 19:00 - 21:00 (B 場地)」的學員表現。
-    整體而言，學員的殺球成功率顯著提升，但在網前小球的處理上失誤率偏高...
+    這份報告分析了 {report_id} 的比賽數據...
     """
 
+# ▼▼▼ 修改 3: 調整 get_chart_card_data ▼▼▼
 def get_chart_card_data(report_id):
     """
     模擬圖表的資料 (根據 ID)
-    (未來這裡會用 report_id 去資料庫查)
     """
-    # 假設 R001 和 R002 用了不同的圖表標題
+    image_folder_name = ""
     if report_id == "R001":
-        titles = ["R001-勝率分析", "R001-失誤分佈"]
+        # 這裡對應到你說的資料夾
+        image_folder_name = "chao_vs_tao" 
+    elif report_id == "R002":
+        image_folder_name = "other" # 假設有另一個
     else:
-        titles = ["R002-出席狀況", "R002-得分手段"]
-        
+        # 給一個預設值，以防萬一
+        image_folder_name = "default" 
+
+    # *** 請確保你的 'report_pics/chao_vs_tao/' 資料夾中
+    # *** 真的有 'win_rate.png' 和 'error_rate.png' 這兩個檔案
+    
     mock_data = [
         {
-            "image_url": "/static/chart1.png", # 假設你有這些圖在 static 資料夾
-            "title": titles[0],
-            "description": "這是一兩行的文字，用來說明這張圖的重點。"
+            # 這是關鍵修改：
+            # 網址 (URL) 指向我們即將建立的新路由 /report-images/
+            # Flask 會把這個請求轉發給 serve_report_image() 函式
+            "image_url": f"/report-images/{image_folder_name}/diff_balls.png", 
+            "title": f"{image_folder_name} - 不同球種",
+            "description": "這是從 report_pics 動態載入的球種圖。"
         },
         {
-            "image_url": "/static/chart2.png",
-            "title": titles[1],
-            "description": "分析反手拍與正手拍的失誤比例。"
+            "image_url": f"/report-images/{image_folder_name}/different_places_score.png",
+            "title": f"{image_folder_name} - 得分分布圖",
+            "description": "這是從 report_pics 動態載入的得分分布圖。"
+        },
+        {
+            "image_url": f"/report-images/{image_folder_name}/opp_lose_reasons.png",
+            "title": f"{image_folder_name} - 得分分析圖",
+            "description": "這是從 report_pics 動態載入的得分分析圖。"
         },
     ]
+    
+    # 附註: 更保險的寫法是使用 url_for
+    # path = f'{image_folder_name}/win_rate.png'
+    # mock_data[0]["image_url"] = url_for('serve_report_image', path_to_image=path)
+    # 這樣如果未來你改了 @app.route 的網址，這裡會自動更新。
+    # 不過目前 f-string 的寫法是最直觀的。
+    
     return mock_data
-# --------------------
+# --- ▲▲▲ 修改 3 完畢 ▲▲▲ ---
 
 
-# --- 路由 1: 儀表板首頁 (只處理 GET 請求) ---
+# --- 路由 1: 儀表板首頁 (保持不變) ---
 @app.route('/', methods=['GET'])
 def dashboard():
-    
     sessions = get_sessions_from_db()
     attributes = get_attributes_list()
-    links = get_report_links() # <-- 取得要生成的連結
-    
-    # 傳遞預設值給模板
+    links = get_report_links() 
     return render_template(
         'index.html',
         sessions=sessions,
         attributes=attributes,
-        links=links, # <-- 傳給 index.html
+        links=links, 
         chart_data=None, 
         current_session=None,
         current_attribute=None,
         current_search=""
     )
 
-# --- 路由 2: 處理分析請求的 API (保持不變) ---
+# --- 路由 2: API (保持不變) ---
 @app.route('/api/analyze', methods=['POST'])
 def api_analyze():
     if llm_core is None:
         return jsonify({"error": "AI 核心模組 (llm_core.py) 載入失敗。"}), 500
 
     try:
-        # ... (你提供的程式碼都很好，保持不變) ...
         data = request.get_json()
         search_query = data.get('search_query')
         session_id = data.get('session_id')
@@ -139,38 +169,35 @@ def api_analyze():
         print(f"Error in /api/analyze: {e}")
         return jsonify({"error": str(e)}), 500
 
-
-# --- ▼▼▼ 這是你要求的修改 ▼▼▼ ---
-#
-# 原本的: @app.route('/templates/report.html') 
-# 原本的: def report_view(report_id):
-#
-# 修正為：
-# 1. 路由 (Route) 應該是描述性的，例如 /report/
-# 2. 路由中用 <report_id> 來接收變數
-# 3. 函式名稱 report_view 必須和 get_report_links() 裡的 "route" 欄位一致
-# 4. 函式 render_template('report.html', ...) 會去 'templates' 資料夾找 'report.html'
-#
+# --- 路由 3: 報告頁面 (保持不變) ---
 @app.route('/report/<report_id>')
 def report_view(report_id):
     """
-    這才是正確的「報告頁面」路由
+    動態報告頁面
     """
     print(f"正在為 {report_id} 生成報告頁面...")
-    
-    # 1. 根據傳入的 report_id 獲取專屬資料
     main_text = get_main_text(report_id)
-    chart_items = get_chart_card_data(report_id)
+    chart_items = get_chart_card_data(report_id) # <-- 這裡會抓到新的 URL
     
-    # 2. 渲染 'templates/report.html' 
-    #    (Flask 會自動去 'templates' 資料夾找)
     return render_template(
         'report.html', 
-        report_title=f"報告 {report_id} 分析", # 傳一個動態標題
+        report_title=f"報告 {report_id} 分析", 
         main_introduction_text=main_text,
         chart_data_list=chart_items
     )
-# --- ▲▲▲ 修改完畢 ▲▲▲ ---
+
+# ▼▼▼ 修改 2: (Part 2) 新增 "圖片傳送路由" ▼▼▼
+#
+@app.route('/report-images/<path:path_to_image>')
+def serve_report_image(path_to_image):
+    """
+    這個路由會攔截所有 /report-images/ 開頭的請求
+    並從 REPORT_PICS_DIR (也就是 'report_pics' 資料夾)
+    安全地傳送 'path_to_image' (例如 "chao_vs_tao/win_rate.png")
+    """
+    print(f"正在從 {REPORT_PICS_DIR} 傳送圖片: {path_to_image}")
+    return send_from_directory(REPORT_PICS_DIR, path_to_image)
+# --- ▲▲▲ 修改 2 完畢 ▲▲▲ ---
 
 
 if __name__ == '__main__':
