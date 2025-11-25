@@ -422,9 +422,19 @@ def generate_analysis_from_dashboard(session_id: str, attribute: str, search_que
     
     print(f"[llm_core] 翻譯後的 Prompt: {prompt}")
     
+    result = run_analysis(prompt, history=None)
+
+    if result["figure"] is not None:
+        import os
+        save_dir = "report_pics/others"
+        os.makedirs(save_dir, exist_ok=True)
+        
+        save_path = os.path.join(save_dir, f"{session_id}_{attribute}.png")
+        result["figure"].savefig(save_path, dpi=150, bbox_inches='tight')
+        print(f"圖表已存檔: {save_path}")
     # --- 注意：這裡我們「沒有」傳入 history ---
     # --- 這表示從儀表板點擊的分析，永遠都是「新的對話」---
-    return run_analysis(prompt, history=None)
+    return result
 
 
 # --- [新增] 主程式進入點 (用於測試) ---

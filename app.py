@@ -12,7 +12,7 @@ except ImportError:
     print("錯誤: 找不到 llm_core.py。")
     print("="*50)
 
-
+#init
 app = Flask(__name__)
 
 # ▼▼▼ 修改 2: (Part 1) 定義 report_pics 資料夾的絕對路徑 ▼▼▼
@@ -30,8 +30,8 @@ REPORT_PICS_DIR = os.path.join(app.root_path, 'report_pics')
 # └── templates/
 #
 
-
-# --- 模擬資料庫 (保持不變) ---
+#fake db
+# --- 模擬資料庫  ---
 def get_sessions_from_db():
     """模擬抓取場次"""
     return [
