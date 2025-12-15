@@ -3,162 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>選手報告</title>
-    <!-- 假設你的 CSS 檔案在 static/style.css -->
+    <title>羽球選手報告</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    
-    <!-- 為了讓範例好看，加一點基本樣式 (你可以用你自己的 CSS) -->
-    <style>
-        body { font-family: system-ui, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: 20px auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 32px; }
-        h1, h2 { text-align: center; color: #1d3557; }
-        .filters-container { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px; }
-        .form-group { flex: 1; display: flex; flex-direction: column; min-width: 200px; }
-        .form-group.full-width { flex-basis: 100%; }
-        label { margin-bottom: 8px; font-weight: 600; color: #495057; }
-        input[type="text"], select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ced4da;
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
-        button {
-            width: 100%;
-            background-color: #007bff; color: white; font-size: 16px; font-weight: 600;
-            padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s;
-        }
-        button:hover:not(:disabled) { background-color: #0056b3; }
-        button:disabled { background-color: #a0cfff; cursor: not-allowed; }
-        
-        /* -- 這是新的結果區塊 -- */
-        #analysis-result-area {
-            margin-top: 24px; padding: 20px; border: 2px dashed #ced4da;
-            border-radius: 8px; min-height: 100px; background-color: #f8f9fa;
-        }
-        #analysis-result-area.loading {
-            display: grid; place-items: center; color: #495057; font-size: 1.1em;
-        }
-        #analysis-result-area img {
-            max-width: 100%; height: auto; margin-top: 16px; border-radius: 8px;
-            border: 1px solid #e9ecef;
-        }
-        .error-message {
-            color: #d90429; font-weight: bold; white-space: pre-wrap;
-        }
-        /* 用 pre 來顯示 AI 回覆的 markdown 格式 */
-        #analysis-result-area pre {
-            white-space: pre-wrap; word-wrap: break-word; background-color: #e9ecef;
-            padding: 15px; border-radius: 5px; font-family: Consolas, "Courier New", monospace;
-            color: #212529;
-        }
-
-        /* -- 你原有的報告連結樣式 -- */
-        .match-link-group { margin-top: 10px; }
-        .btn-disabled {
-            background-color: #6c757d; color: white; padding: 10px 15px;
-            border-radius: 5px; text-decoration: none; opacity: 0.65; cursor: not-allowed;
-        }
-        #report-btn {
-            background-color: #28a745; color: white; padding: 10px 15px;
-            border-radius: 5px; text-decoration: none; display: inline-block;
-        }
-    </style>
 </head>
 <body>
 
     <div class="container">
         <h1>🏸 羽球教練儀表板</h1>
 
-        <!-- 
-          【關鍵修改 1】
-          - 移除 action 和 method
-          - 加上 id="analysis-form"
-        -->
+        <!-- PART 1: 舊版單選 (保持不變) -->
         <form id="analysis-form">
-            
-            <div class="filters-container">
+             <!-- ...保留原本內容... -->
+             <div class="filters-container">
                 <div class="form-group full-width">
-                    <label for="search_input">搜尋選手 (可選)</label>
-                    <input type="text" id="search_input" name="search_query" placeholder="請輸入學生姓名..." value="{{ current_search or '' }}">
+                    <label>搜尋選手 (可選)</label>
+                    <input type="text" id="search_input" name="search_query" placeholder="請輸入學生姓名..." value="">
                 </div>
             </div>
-
             <div class="filters-container">
                 <div class="form-group">
-                    <label for="session_select">場次</label>
+                    <label>場次</label>
                     <select id="session_select" name="session_id">
-                        <option value="" {% if not current_session %}selected{% endif %} disabled>-- 請選擇場次 --</option>
-                        {% for s in sessions %}
-                            <option value="{{ s.id }}" {% if s.id == current_session %}selected{% endif %}>
-                                {{ s.name }}
-                            </option>
-                        {% endfor %}
+                        <option value="" selected disabled>-- 請選擇場次 --</option>
+                        {% for s in sessions %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
                     </select>
                 </div>
-
                 <div class="form-group">
-                    <label for="attribute_select">屬性</label>
+                    <label>屬性</label>
                     <select id="attribute_select" name="attribute_name">
-                        <option value="" {% if not current_attribute %}selected{% endif %} disabled>-- 請選擇屬性 --</option>
-                        {% for attr in attributes %}
-                            <option value="{{ attr }}" {% if attr == current_attribute %}selected{% endif %}>
-                                {{ attr }}
-                            </option>
-                        {% endfor %}
+                        <option value="" selected disabled>-- 請選擇屬性 --</option>
+                        {% for attr in attributes %}<option value="{{ attr }}">{{ attr }}</option>{% endfor %}
                     </select>
                 </div>
             </div>
-
             <div class="form-group full-width">
-                <!-- 【關鍵修改 2】加上 id="generate-button" -->
-                <button type="submit" id="generate-button">生成圖表</button>
+                <button type="submit" id="generate-button">生成圖表 (舊版)</button>
             </div>
         </form>
+        <div id="analysis-result-area"><p>舊版結果區...</p></div>
 
-        <!-- 
-          【關鍵修改 3】
-          - 移除 {% if chart_data %} ... {% endif %}
-          - 換成這個固定的 <div>，讓 JavaScript 填入內容
-        -->
-        <h2>📊 分析結果</h2>
-        <div id="analysis-result-area">
-            <p>請選擇條件並點擊「生成圖表」以開始分析。</p>
-        </div>
+        <hr class="section-divider">
 
+        <!-- ========================================== -->
+        <!-- PART 2: 【修改】AI 多選分析 -> 跳轉新頁面   -->
+        <!-- ========================================== -->
+        <section class="llm-section">
+            <h2>🤖 AI 綜合戰術分析</h2>
+            <p class="desc-text">請選擇多個技術維度，點擊按鈕後將在<b>新分頁</b>生成完整報告。</p>
+            
+            <!-- 
+                關鍵修改：
+                1. 使用 <form> 包裹
+                2. action="/ai-report" 指向新路由
+                3. target="_blank" 在新分頁開啟
+            -->
+            <form action="/ai-report" method="POST" target="_blank" id="ai-report-form">
+                
+                <div class="filters-container">
+                    <div class="form-group full-width">
+                        <label>選擇分析維度 (可多選)</label>
+                        
+                        <!-- 下拉選單 UI (HTML 結構不變，但在 checkbox 加入 name) -->
+                        <div class="custom-dropdown" id="llm-multi-select">
+                            <div class="select-trigger">
+                                <span class="trigger-text">請選擇分析項目...</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <div class="custom-options">
+                                <!-- 
+                                    關鍵：加上 name="selected_items" 
+                                    這樣表單送出時，後端可以用 request.form.getlist('selected_items') 抓到
+                                -->
+                                <label class="option-item"><input type="checkbox" name="selected_items" value="不同擊球位置"> 不同擊球位置</label>
+                                <label class="option-item"><input type="checkbox" name="selected_items" value="球種"> 球種</label>
+                                <label class="option-item"><input type="checkbox" name="selected_items" value="球落點分布"> 球落點分布</label>
+                                <label class="option-item"><input type="checkbox" name="selected_items" value="多拍來回耐力"> 多拍來回耐力</label>
+                                <label class="option-item"><input type="checkbox" name="selected_items" value="防守反擊策略"> 防守反擊策略</label>
+                                <label class="option-item"><input type="checkbox" name="selected_items" value="心理素質評估"> 心理素質評估</label>
+                                <label class="option-item"><input type="checkbox" name="selected_items" value="體力"> 體力</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- 🔗 比賽報告連結（獨立功能 - 保持不變）-->
-        <h2>📄 比賽報告</h2>
+                <div class="form-group full-width">
+                    <!-- 改為 submit 按鈕 -->
+                    <button type="submit" class="btn-ai">✨ 在新分頁生成 AI 報告</button>
+                </div>
+            </form>
+            
+            <!-- 原本的結果顯示區塊可以刪除了，因為現在會直接跳轉 -->
+        </section>
+
+        <hr class="section-divider">
+
+        <!-- PART 3: 比賽報告連結 (不變) -->
+        <h2>📄 比賽報告列表</h2>
         <div class="filters-container">
             <div class="form-group full-width">
-                <label for="match_link_select">選擇比賽</label>
+                <label>選擇比賽</label>
                 <select id="match_link_select" onchange="updateReportLinks()">
                     <option value="" selected disabled>-- 請選擇比賽連結 --</option>
                     {% for link in links %}
-                        <option value="{{ url_for(link.route, report_id=link.param) }}">
-                            {{ link.name }}
-                        </option>
+                    <option value="{{ url_for(link.route, report_id=link.param) }}">{{ link.name }}</option>
                     {% endfor %}
                 </select>
+            </div>
+            <div class="filters-container" style="width:100%; margin-top:10px;">
+                <div class="form-group">
+                    <label>前往報告</label>
+                    <a id="report-btn" href="#" class="btn-disabled" target="_blank">請先選擇比賽</a>
+                </div>
                 
             </div>
-            <div class="form-group">
-                <label>前往報告</label>
-                <a id="report-btn" href="#" class="btn-disabled" target="_blank">請先選擇比賽</a>
-            </div>
-            <div class="form-group full-width match-link-group">
-                <label>預覽選擇的報告</label>
-                <a id="actual-link" href="#" target="_blank">請先選擇比賽</a>
-            </div>
         </div>
-
     </div>
 
-    <!-- 
-      【關鍵修改 4】
-      - 你的 HTML 已經有這一行了，保持不變！
-      - 我們將在下面建立這個檔案。
-    -->
     <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 </body>
 </html>

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>羽球分析報告</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -12,7 +13,6 @@
             padding: 2rem;
         }
         .container {
-            /* /* (從 1200px 調整為 900px，在單欄佈局下可讀性更高) */
             max-width: 900px; 
             margin: 0 auto;
             background: #ffffff;
@@ -27,8 +27,6 @@
             border-bottom: 2px solid #eee;
             padding-bottom: 1rem;
         }
-        
-        /* 1. 你的主要文字區塊 (不變) */
         .introduction-text {
             font-size: 1.1rem;
             line-height: 1.7;
@@ -39,25 +37,12 @@
             margin-bottom: 2.5rem;
             white-space: pre-wrap; 
         }
-        
-        h2 {
-            color: #1a237e;
-            margin-bottom: 1.5rem;
-        }
-
-        /* 2. 圖片/圖表 的網格容器 (Grid Container) */
+        h2 { color: #1a237e; margin-bottom: 1.5rem; }
         .chart-grid {
             display: grid;
-            
-            /* /* (從 "repeat(auto-fit, minmax(300px, 1fr))" 改成 "1fr") */
-            /* "1fr" 表示網格只有一欄，且該欄佔滿所有可用寬度 */
             grid-template-columns: 1fr;
-
-            /* (間距從 1.5rem 增加到 2rem，讓卡片之間更分明) */
             gap: 2rem; 
         }
-
-        /* 3. 單張卡片 (Card) 的樣式 (不變) */
         .chart-card {
             border: 1px solid #ddd;
             border-radius: 10px;
@@ -70,19 +55,13 @@
             transform: translateY(-5px); 
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
         }
-
-        /* 卡片裡的圖片 (不變) */
         .chart-card img {
-            width: 100%; /* 圖片寬度 100% 填滿卡片 */
+            width: 100%; 
             height: auto; 
             display: block;
             background-color: #f0f0f0; 
         }
-        
-        /* 卡片裡的文字區 (不變) */
-        .card-content {
-            padding: 1rem 1.25rem;
-        }
+        .card-content { padding: 1rem 1.25rem; }
         .chart-card h3 {
             font-size: 1.2rem;
             color: #333;
@@ -95,32 +74,60 @@
             line-height: 1.5;
             margin-bottom: 0;
         }
+        
+        
+        /* 2. 新增 Markdown 樣式修正 */
+        .markdown-text h1, .markdown-text h2, .markdown-text h3 { color: #1a237e; margin-top: 1.2rem; }
+        .markdown-text ul { padding-left: 1.5rem; }
+        .markdown-text li { margin-bottom: 0.5rem; }
+        .markdown-text strong { color: #d32f2f; } /* 讓重點顯眼一點 */
+        
+        .introduction-text { 
+            background-color: #f9f9f9; padding: 1.5rem; border-radius: 8px; margin-bottom: 2.5rem; 
+            line-height: 1.7; color: #333;
+        }
+        /* 移除原本的 white-space: pre-wrap; 因為 Markdown 解析後不需要它 */
     </style>
 </head>
 <body>
-
     <div class="container">
         <h1>{{ report_title or '羽球分析報告' }}</h1>
         <h2 style="text-align: center;">摘要</h2>
-        <div class="introduction-text">
+        
+        <div class="introduction-text markdown-text" id="main-summary">
             {{ main_introduction_text }}
         </div>
 
         <h2>詳細圖表分析</h2>
-        
         <div class="chart-grid">
-
             {% for item in chart_data_list %}
             <div class="chart-card">
                 <img src="{{ item.image_url }}" alt="{{ item.title }}">
                 <div class="card-content">
                     <h3>{{ item.title }}</h3>
-                    <p>{{ item.description }}</p>
+                    <div class="card-description markdown-text">
+                        {{ item.description }}
+                    </div>
                 </div>
             </div>
             {% endfor %}
-            
         </div> 
-    </div> 
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 解析主摘要
+            const summaryEl = document.getElementById('main-summary');
+            if (summaryEl) {
+                summaryEl.innerHTML = marked.parse(summaryEl.textContent);
+            }
+
+            // 解析所有卡片描述
+            const descriptions = document.querySelectorAll('.card-description');
+            descriptions.forEach(el => {
+                el.innerHTML = marked.parse(el.textContent);
+            });
+        });
+    </script>
 </body>
 </html>

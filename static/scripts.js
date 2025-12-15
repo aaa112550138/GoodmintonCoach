@@ -1,137 +1,122 @@
-// 確保 DOM 載入完成後才執行
 document.addEventListener("DOMContentLoaded", function() {
     
-    // --- 1. 【全新】AI 分析表單的邏輯 ---
+    // ==========================================
+    // PART 1: 【舊功能】傳統單選分析表單邏輯
+    // ==========================================
     const analysisForm = document.getElementById("analysis-form");
-    const resultArea = document.getElementById("analysis-result-area");
-    const generateButton = document.getElementById("generate-button");
+    const oldResultArea = document.getElementById("analysis-result-area");
+    const oldGenerateButton = document.getElementById("generate-button");
 
-    // 檢查元素是否存在，避免錯誤
     if (analysisForm) {
         analysisForm.addEventListener("submit", function(event) {
-            // 1. 阻止表單的預設提交行為 (防止頁面重新整理)
             event.preventDefault(); 
 
-            // 2. 獲取表單中的值 (使用你新的 ID)
             const search_query = document.getElementById("search_input").value;
             const session_id = document.getElementById("session_select").value;
             const attribute_name = document.getElementById("attribute_select").value;
 
-            // 簡單的前端驗證
             if (!session_id || !attribute_name) {
-                resultArea.innerHTML = `<p class="error-message">錯誤：\n請務必選擇「場次」和「屬性」。</p>`;
+                oldResultArea.innerHTML = `<p class="error-message">錯誤：請務必選擇「場次」和「屬性」。</p>`;
                 return;
             }
 
-            // 3. 顯示載入中... 並禁用按鈕
-            resultArea.innerHTML = '<p>成功! Python 正在為您分析...</p>';
-            resultArea.classList.add("loading");
-            generateButton.disabled = true;
-            generateButton.innerText = "AI 分析中...";
+            // 顯示載入中
+            oldResultArea.innerHTML = '<p>正在請求 Python 分析...</p>';
+            oldGenerateButton.disabled = true;
+            oldGenerateButton.innerText = "分析中...";
 
-            // 4. 準備要 POST 到 API 的 JSON 資料
-            const requestData = {
-                search_query: search_query,
-                session_id: session_id,
-                attribute_name: attribute_name
-            };
-
-            // 5. 使用 fetch 呼叫我們的 Flask API (/api/analyze)
+            // 舊功能維持使用 fetch (AJAX) 不換頁
             fetch("/api/analyze", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(requestData)
+                body: JSON.stringify({ search_query, session_id, attribute_name })
             })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(errData => {
-                        throw new Error(errData.error || `伺服器錯誤: ${response.status}`);
-                    });
-                }
-                return response.json();
-            })
+            .then(res => res.json())
             .then(data => {
-                // 6. 成功! 處理從後端拿到的 JSON 資料
-                resultArea.classList.remove("loading");
-                
                 if (data.status === "success") {
-                    let html_output = "";
-                    
-                    // 處理 AI 生成的文字 (用 <pre> 保留格式)
-                    if (data.analysis_text) {
-                        html_output += `<pre>${data.analysis_text}</pre>`;
-                    } else {
-                        html_output += "<p>AI 未提供文字分析。</p>";
-                    }
-
-                    // 處理 AI 生成的圖表 (Base64 圖片)
-                    if (data.chart_image_base64) {
-                        html_output += `<h3>分析圖表</h3>`;
-                        html_output += `<img src="data:image/png;base64,${data.chart_image_base64}" alt="AI 分析圖表">`;
-                    } else {
-                        html_output += "<p>AI 未生成圖表。</p>";
-                    }
-                    
-                    resultArea.innerHTML = html_output;
-
+                    let html = "";
+                    if (data.analysis_text) html += `<pre>${data.analysis_text}</pre>`;
+                    if (data.chart_image_base64) html += `<h3>分析圖表</h3><img src="data:image/png;base64,${data.chart_image_base64}" alt="Chart">`;
+                    oldResultArea.innerHTML = html || "<p>AI 未提供內容。</p>";
                 } else {
-                    resultArea.innerHTML = `<p class="error-message">分析失敗：\n${data.error}</p>`;
+                    oldResultArea.innerHTML = `<p class="error-message">錯誤：${data.error}</p>`;
                 }
             })
-            .catch(error => {
-                // 7. 處理網路錯誤或 fetch 失敗
-                console.error("Fetch 呼叫失敗:", error);
-                resultArea.classList.remove("loading");
-                resultArea.innerHTML = `<p class="error-message">請求失敗：\n${error.message}</p>`;
+            .catch(err => {
+                oldResultArea.innerHTML = `<p class="error-message">請求失敗：${err.message}</p>`;
             })
             .finally(() => {
-                // 8. 無論成功或失敗，最後都要恢復按鈕
-                generateButton.disabled = false;
-                generateButton.innerText = "生成圖表";
+                oldGenerateButton.disabled = false;
+                oldGenerateButton.innerText = "生成圖表 (舊版)";
             });
         });
     }
 
-    // --- 【新增】在頁面載入時，也執行一次連結更新，確保初始狀態正確 ---
+    // ==========================================
+    // PART 2: 【新功能】多選下拉選單 UI 邏輯
+    // ==========================================
+    // 注意：因為使用 HTML Form POST (target="_blank")，
+    // 這裡只需要處理「選單的顯示」與「文字更新」，不需要寫 fetch 送出資料。
+    
+    const dropdown = document.querySelector('.custom-dropdown');
+    if (dropdown) {
+        const trigger = dropdown.querySelector('.select-trigger');
+        const triggerText = dropdown.querySelector('.trigger-text');
+        const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+
+        // 1. 點擊觸發開關
+        trigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+        });
+
+        // 2. 點擊外部關閉選單
+        document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target)) dropdown.classList.remove('open');
+        });
+
+        // 3. 監聽勾選變化，更新顯示文字 (例如: "已選擇 3 個項目")
+        checkboxes.forEach(box => {
+            box.addEventListener('change', () => {
+                let count = 0;
+                checkboxes.forEach(b => { if(b.checked) count++; });
+                
+                if (count === 0) {
+                    triggerText.textContent = "請選擇分析項目...";
+                    triggerText.style.color = "#333";
+                } else {
+                    triggerText.textContent = `已選擇 ${count} 個項目`;
+                    triggerText.style.color = "#007bff";
+                }
+            });
+        });
+    }
+    
+    // ==========================================
+    // PART 3: 連結更新 (初始化)
+    // ==========================================
     updateReportLinks();
+});
 
-}); // DOMContentLoaded 結束
-
-
-// --- 2. 【整合版】比賽報告連結邏輯 ---
-// 響應 HTML 中的 onchange="updateReportLinks()"
+// 獨立函式 (因為 HTML 有 onchange="updateReportLinks()")
 function updateReportLinks() {
     const select = document.getElementById("match_link_select");
     const reportBtn = document.getElementById("report-btn");
-    const actualLink = document.getElementById("actual-link");
-    
-    if (!select || !reportBtn || !actualLink) {
-        // 如果找不到元素，就提早退出，避免錯誤
-        return;
-    }
-    
+    //const actualLink = document.getElementById("actual-link");
+    console.log("偵hi");
+    if (!select || !reportBtn ) return;
+    console.log("偵hi");
     const selectedUrl = select.value;
-    const selectedOption = select.options[select.selectedIndex];
-    const selectedText = selectedOption.textContent;
-
+    console.log("偵錯 1: select.value (下拉選單選取的值) =", selectedUrl);
     if (selectedUrl) {
-        // 更新「前往報告」按鈕
         reportBtn.href = selectedUrl;
         reportBtn.textContent = "前往報告";
         reportBtn.classList.remove("btn-disabled");
         
-        // 更新「預覽連結」文字 (採用你提供的 '前往：' 格式)
-        actualLink.href = selectedUrl;
-        actualLink.textContent = `前往：${selectedText.trim()}`;
     } else {
-        // 重設「前往報告」按鈕
         reportBtn.href = "#";
         reportBtn.textContent = "請先選擇比賽";
         reportBtn.classList.add("btn-disabled");
-
-        // 重設「預覽連結」文字 (採用你提供的 '請先選擇' 格式)
-        actualLink.href = "#";
-        actualLink.textContent = "請先選擇一個連結";
+        
     }
 }
-

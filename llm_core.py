@@ -400,12 +400,20 @@ def run_analysis(natural_language_prompt: str, history: list = None, max_retries
 
 
 # --- (保持不變) 儀表板翻譯器 ---
+# llm_core.py
+
+# ... (省略前面的程式碼和匯入)
+import json # 確保有這行
+
+# ... (省略 run_analysis 等其他函式)
+
+# --- 儀表板翻譯器 (修改後) ---
 def generate_analysis_from_dashboard(session_id: str, attribute: str, search_query: str) -> dict:
     """
-    (保持不變)
-    將儀表板的「選項」轉換成「自然語言問題」。
+    將儀表板的「選項」轉換成「自然語言問題」，並將圖片和文字整合存入同一個 JSON。
     """
     
+    # --- 1. 定義 Prompt (保持不變) ---
     prompt = f"請幫我分析所有場次的數據。"
     
     if search_query:
@@ -413,27 +421,106 @@ def generate_analysis_from_dashboard(session_id: str, attribute: str, search_que
     
     if attribute == "ALL (總覽)":
         prompt += " 請提供這個場次的整體數據總覽，並用一個合適的圖表（例如長條圖或圓餅圖）來視覺化關鍵指標。"
-    
     elif attribute == "球種":
         prompt += f" 請分析這個場次的「球種」分佈。請使用圓餅圖 (pie chart) 或長條圖 (bar chart) 來呈現不同球種 (例如：殺球, 切球, Tiao, 高遠球) 的使用次數或百分比。"
-    
+    elif attribute == "殺球成功率":
+        prompt += (
+            f" 請計算 '{search_query}' 的殺球總次數、得分次數和失誤次數，並計算出他的「殺球成功率」（得分/總次數）。"
+            f" 請使用一個清晰的長條圖或表格來比較殺球得分與殺球總次數的關係，並分析這個成功率的意涵。"
+        )
+    elif attribute == "跑動距離":
+        prompt += (
+            f" 請分析 '{search_query}' 在比賽中的「跑動距離」總數。"
+            f" 請使用折線圖 (line chart) 來顯示每一分 (point_id) 的累計跑動距離變化，或使用長條圖來比較不同局數 (game_id) 的跑動距離總和。"
+            f" 同時，請計算平均跑動距離並進行總結。"
+        )
     else:
         prompt += f" 請專注於分析 '{attribute}' 這個指標，並為此生成一個最合適的圖表。"
     
     print(f"[llm_core] 翻譯後的 Prompt: {prompt}")
     
+    # --- 2. 執行 AI 分析 ---
     result = run_analysis(prompt, history=None)
 
+    # --- 3. 定義路徑 ---
+    # 建議：每個 session 最好有一個獨立資料夾，或是像你現在這樣放在 others
+    # 這裡假設你想把同一個 session 的資料整合在一起
+    save_dir = "report_pics/others" 
+    import os
+    os.makedirs(save_dir, exist_ok=True)
+
+    # 圖片的檔名還是需要區分 attribute
+    base_img_filename = f"{session_id}_{attribute}"
+    
+    # --- 4. 圖片儲存 (保持不變) ---
     if result["figure"] is not None:
-        import os
-        save_dir = "report_pics/others"
-        os.makedirs(save_dir, exist_ok=True)
-        
-        save_path = os.path.join(save_dir, f"{session_id}_{attribute}.png")
-        result["figure"].savefig(save_path, dpi=150, bbox_inches='tight')
-        print(f"圖表已存檔: {save_path}")
-    # --- 注意：這裡我們「沒有」傳入 history ---
-    # --- 這表示從儀表板點擊的分析，永遠都是「新的對話」---
+        save_path_img = os.path.join(save_dir, f"{base_img_filename}.png")
+        result["figure"].savefig(save_path_img, dpi=150, bbox_inches='tight')
+        print(f"圖表已存檔: {save_path_img}")
+    
+    # --- 5. 文字儲存 (修改：整合進單一 JSON) ---
+    analysis_text = result.get("text")
+    
+    if analysis_text:
+        try:
+            # 定義這個 Session 的總表檔名
+            # 例如: report_pics/others/S001_metadata.json
+            master_json_filename = f"{session_id}_metadata.json"
+            master_json_path = os.path.join(save_dir, master_json_filename)
+            
+            # (A) 準備這一次分析的資料物件
+            new_card_data = {
+                "attribute": attribute,             # 關鍵字：例如 "殺球成功率"
+                "search_query": search_query,
+                "analysis_text": analysis_text,     # AI 文字
+                "image_filename": f"{base_img_filename}.png", # 對應圖片檔名
+                "timestamp": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+            }
+
+            # (B) 讀取現有的 JSON (如果有的話)
+            current_data = {}
+            if os.path.exists(master_json_path):
+                with open(master_json_path, 'r', encoding='utf-8') as f:
+                    try:
+                        current_data = json.load(f)
+                    except json.JSONDecodeError:
+                        print("JSON 格式錯誤，將重新建立。")
+                        current_data = {}
+
+            # (C) 初始化結構
+            if "session_id" not in current_data:
+                current_data["session_id"] = session_id
+            
+            # 使用 list 來儲存不同 attribute 的卡片
+            if "analysis_cards" not in current_data:
+                current_data["analysis_cards"] = []
+
+            # (D) 更新邏輯：檢查這個 attribute 是否已經存在
+            # 如果存在就更新，不存在就 Append
+            cards_list = current_data["analysis_cards"]
+            found = False
+            for index, card in enumerate(cards_list):
+                if card.get("attribute") == attribute:
+                    # 找到了！更新它
+                    cards_list[index] = new_card_data
+                    found = True
+                    break
+            
+            if not found:
+                # 沒找到，新增它
+                cards_list.append(new_card_data)
+
+            # (E) 寫回檔案
+            with open(master_json_path, 'w', encoding='utf-8') as f:
+                json.dump(current_data, f, ensure_ascii=False, indent=4)
+                
+            print(f"分析文字已更新至總表: {master_json_path}")
+            
+        except Exception as e:
+            print(f"警告: JSON 更新失敗: {e}")
+            import traceback
+            traceback.print_exc()
+
     return result
 
 
@@ -456,7 +543,7 @@ if __name__ == "__main__":
         print(f"錯誤: {result1['error']}")
     else:
         print("\n[AI 洞察 1]:")
-        print(result1["text_insight"])
+        print(result1["text"])
         if result1["figure"]:
             print("(已生成圖表 1)")
         
@@ -477,7 +564,7 @@ if __name__ == "__main__":
         print(f"錯誤: {result2['error']}")
     else:
         print("\n[AI 洞察 2]:")
-        print(result2["text_insight"])
+        print(result2["text"])
         if result2["figure"]:
             print("(已生成圖表 2)")
             
