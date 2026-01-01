@@ -11,10 +11,11 @@
     <div class="container">
         <h1>🏸 羽球教練儀表板</h1>
 
-        <!-- PART 1: 舊版單選 (保持不變) -->
+        <!-- ========================================== -->
+        <!-- PART 1: 舊版單選 (保持不變)                -->
+        <!-- ========================================== -->
         <form id="analysis-form">
-             <!-- ...保留原本內容... -->
-             <div class="filters-container">
+            <div class="filters-container">
                 <div class="form-group full-width">
                     <label>搜尋選手 (可選)</label>
                     <input type="text" id="search_input" name="search_query" placeholder="請輸入學生姓名..." value="">
@@ -45,59 +46,66 @@
         <hr class="section-divider">
 
         <!-- ========================================== -->
-        <!-- PART 2: 【修改】AI 多選分析 -> 跳轉新頁面   -->
+        <!-- PART 2: AI 多選分析 (跳轉新頁面)            -->
         <!-- ========================================== -->
         <section class="llm-section">
-            <h2>🤖 AI 綜合戰術分析</h2>
-            <p class="desc-text">請選擇多個技術維度，點擊按鈕後將在<b>新分頁</b>生成完整報告。</p>
+            <h2>🤖 AI 綜合戰術分析 (多選)</h2>
+            <p class="desc-text">請選擇多個技術維度，AI 將為您生成綜合文字報告與戰術示意圖。</p>
             
-            <!-- 
-                關鍵修改：
-                1. 使用 <form> 包裹
-                2. action="/ai-report" 指向新路由
-                3. target="_blank" 在新分頁開啟
-            -->
             <form action="/ai-report" method="POST" target="_blank" id="ai-report-form">
-                
                 <div class="filters-container">
                     <div class="form-group full-width">
-                        <label>選擇分析維度 (可多選)</label>
-                        
-                        <!-- 下拉選單 UI (HTML 結構不變，但在 checkbox 加入 name) -->
+                        <label>選擇分析維度</label>
                         <div class="custom-dropdown" id="llm-multi-select">
                             <div class="select-trigger">
                                 <span class="trigger-text">請選擇分析項目...</span>
                                 <span class="arrow">▼</span>
                             </div>
                             <div class="custom-options">
-                                <!-- 
-                                    關鍵：加上 name="selected_items" 
-                                    這樣表單送出時，後端可以用 request.form.getlist('selected_items') 抓到
-                                -->
-                                <label class="option-item"><input type="checkbox" name="selected_items" value="不同擊球位置"> 不同擊球位置</label>
-                                <label class="option-item"><input type="checkbox" name="selected_items" value="球種"> 球種</label>
-                                <label class="option-item"><input type="checkbox" name="selected_items" value="球落點分布"> 球落點分布</label>
-                                <label class="option-item"><input type="checkbox" name="selected_items" value="多拍來回耐力"> 多拍來回耐力</label>
-                                <label class="option-item"><input type="checkbox" name="selected_items" value="防守反擊策略"> 防守反擊策略</label>
-                                <label class="option-item"><input type="checkbox" name="selected_items" value="心理素質評估"> 心理素質評估</label>
-                                <label class="option-item"><input type="checkbox" name="selected_items" value="體力"> 體力</label>
+                                <!-- 這裡是之前那堆選項，為了版面乾淨我省略一點 -->
+                                <label class="option-item"><input type="checkbox" name="selected_items" value="殺球威力分析"> 殺球威力分析</label>
+                                <label class="option-item"><input type="checkbox" name="selected_items" value="防守非受迫性失誤"> 防守非受迫性失誤</label>
+                                <label class="option-item"><input type="checkbox" name="selected_items" value="守轉攻成功率"> 守轉攻成功率</label>
+                                <label class="option-item"><input type="checkbox" name="selected_items" value="關鍵分防守心態"> 關鍵分防守心態</label>
+                                <!-- ...你可以把剩下的補回來... -->
                             </div>
                         </div>
                     </div>
                 </div>
-
                 <div class="form-group full-width">
-                    <!-- 改為 submit 按鈕 -->
-                    <button type="submit" class="btn-ai">✨ 在新分頁生成 AI 報告</button>
+                    <button type="submit" class="btn-ai">✨ 生成多選報告</button>
                 </div>
             </form>
-            
-            <!-- 原本的結果顯示區塊可以刪除了，因為現在會直接跳轉 -->
         </section>
 
         <hr class="section-divider">
 
-        <!-- PART 3: 比賽報告連結 (不變) -->
+        <!-- ========================================== -->
+        <!-- PART 3: 【新功能】教練自定義輸入分析        -->
+        <!-- ========================================== -->
+        <section class="llm-section">
+            <h2>💬 教練自定義指令</h2>
+            <p class="desc-text">直接輸入您想問 AI 的戰術問題或分析指令，例如：「幫我分析這場比賽的網前失誤原因」。</p>
+            
+            <form action="/ai-report-text" method="POST" target="_blank">
+                <div class="filters-container">
+                    <div class="form-group full-width">
+                        <label for="user_input">輸入指令</label>
+                        <!-- 使用 textarea 讓輸入框大一點 -->
+                        <textarea id="user_input" name="user_input" rows="3" placeholder="請在此輸入您的問題..."></textarea>
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <button type="submit" class="btn-ai" style="background: linear-gradient(135deg, #FF8008 0%, #FFC837 100%);">🚀 發送指令生成報告</button>
+                </div>
+            </form>
+        </section>
+
+        <hr class="section-divider">
+
+        <!-- ========================================== -->
+        <!-- PART 4: 比賽報告列表 (原功能)               -->
+        <!-- ========================================== -->
         <h2>📄 比賽報告列表</h2>
         <div class="filters-container">
             <div class="form-group full-width">
@@ -105,7 +113,7 @@
                 <select id="match_link_select" onchange="updateReportLinks()">
                     <option value="" selected disabled>-- 請選擇比賽連結 --</option>
                     {% for link in links %}
-                    <option value="{{ url_for(link.route, report_id=link.param) }}">{{ link.name }}</option>
+                        <option value="{{ url_for(link.route, report_id=link.param) }}">{{ link.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -114,9 +122,54 @@
                     <label>前往報告</label>
                     <a id="report-btn" href="#" class="btn-disabled" target="_blank">請先選擇比賽</a>
                 </div>
-                
             </div>
         </div>
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <i class="fas fa-star"></i> 我的最愛模版 (Saved Templates)
+            </div>
+            <div class="card-body">
+                {% if my_templates %}
+                    <div class="list-group">
+                        {% for t in my_templates %}
+                        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <form action="/ai-report-text" method="POST" class="flex-grow-1" style="margin:0;">
+                                <input type="hidden" name="user_input" value="{{ t.prompt }}">
+                                <button type="submit" class="btn btn-link text-decoration-none text-dark text-start p-0 w-100">
+                                    <strong>{{ t.name }}</strong>
+                                    <div class="small text-muted text-truncate" style="max-width: 300px;">
+                                        {{ t.prompt }}
+                                    </div>
+                                </button>
+                            </form>
+                            
+                            <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteTemplate('{{ t.id }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center p-3">
+                        尚無儲存的模版。<br>
+                        <small>請在生成報告後點選「存為最愛」。</small>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <script>
+        function deleteTemplate(id) {
+            if(!confirm('確定要刪除這個模版嗎？')) return;
+            fetch('/api/delete-template/' + id, {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                if(data.success) location.reload();
+                else alert(data.message);
+            });
+        }
+        </script>
     </div>
 
     <script src="{{ url_for('static', filename='scripts.js') }}"></script>

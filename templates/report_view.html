@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ report.report_title }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: -apple-system, sans-serif; background-color: #f4f7f9; margin: 0; padding: 2rem; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 3rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        
+        h1 { color: #003366; text-align: center; border-bottom: 2px solid #eee; padding-bottom: 1rem; }
+        .metadata { text-align: center; color: #888; margin-bottom: 2rem; }
+        
+        .summary-box { background: #f9f9f9; padding: 1.5rem; border-left: 5px solid #003366; border-radius: 5px; margin-bottom: 3rem; }
+        
+        /* 圖片容器：規定大小不要亂跑 */
+        /* 移除 Grid 或 Flexbox，強制讓所有卡片垂直堆疊 */
+        .chart-grid {
+            display: block; /* 確保它是一個正常的區塊元素容器 */
+            margin-top: 2rem;
+        }
+
+        /* 確保卡片本身佔據所有可用寬度 */
+        .chart-card { 
+            /* 移除所有並排相關的設定 */
+            width: 100%; /* 讓每個卡片佔滿一行 */
+            max-width: 800px; /* (可選) 設置最大寬度讓內容不要撐太開 */
+            margin: 0 auto 30px auto; /* 居中並在卡片之間增加間隔 */
+            border: 1px solid #eee;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column; 
+            background: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); /* 增加輕微陰影，讓卡片更突出 */
+        }
+
+        /* 圖片容器和圖片本身的設定保持不變，這樣可以繼續控制圖片大小 */
+        .image-container { 
+            width: 100%; 
+            height: 600px; /* 提高高度，讓圖表更清晰 */
+            background: #fff; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .image-container img { 
+            max-width: 95%; 
+            max-height: 100%; 
+            object-fit: contain; 
+        }
+        .image-container { 
+            width: 100%; 
+            height: 400px; 
+            background: #fff; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .image-container img { 
+            max-width: 95%; 
+            max-height: 95%; 
+            object-fit: contain; 
+        }
+
+        .card-content { padding: 1.5rem; flex-grow: 1; }
+        .card-content h3 { margin-top: 0; color: #1a237e; font-size: 1.25rem; }
+        
+        /* Markdown 內容樣式 */
+        .markdown-content { font-size: 0.95rem; line-height: 1.6; color: #444; }
+        .markdown-content p { margin: 0.5rem 0; }
+        .markdown-content strong { color: #d32f2f; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>{{ report.report_title }}</h1>
+    <div class="metadata">報告編號：{{ report.report_id }} | 日期：{{ report.report_date }}</div>
+
+    <div class="summary-box">
+        <h2 style="margin-top: 0; font-size: 1.2rem;">報告摘要</h2>
+        <div class="markdown-content" id="main-summary">{{ report.main_summary }}</div>
+    </div>
+
+    <div class="chart-grid">
+        {% for card in report.analysis_cards %}
+        <div class="chart-card">
+            <div class="image-container">
+                <img src="/report-images/{{ card.image_filename }}" alt="{{ card.title }}">
+            </div>
+            <div class="card-content">
+                <h3>{{ card.title }}</h3>
+                <div class="markdown-content card-analysis">
+                    {{ card.analysis_text }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 解析主摘要
+        const summaryEl = document.getElementById('main-summary');
+        if (summaryEl) summaryEl.innerHTML = marked.parse(summaryEl.textContent);
+
+        // 解析所有分析卡片內容並過濾掉可能重複的標題
+        const analyses = document.querySelectorAll('.card-analysis');
+        analyses.forEach(el => {
+            let rawText = el.textContent.trim();
+            // 如果內容開頭是 ## 標題，將其過濾掉，因為我們已經有 <h3> 了
+            let lines = rawText.split('\n');
+            let filteredText = lines.filter(line => !line.trim().startsWith('##')).join('\n');
+            el.innerHTML = marked.parse(filteredText);
+        });
+    });
+</script>
+
+</body>
+</html>
